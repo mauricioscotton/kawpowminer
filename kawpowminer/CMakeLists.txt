@@ -31,6 +31,10 @@ if(APICORE)
 	target_link_libraries(kawpowminer PRIVATE apicore)
 endif()
 
+if(HTTPAPICORE)
+	target_link_libraries(kawpowminer PRIVATE httpapicore)
+endif()
+
 include(GNUInstallDirs)
 install(TARGETS kawpowminer DESTINATION ${CMAKE_INSTALL_BINDIR})
 if(MSVC)
