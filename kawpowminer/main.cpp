@@ -41,6 +41,11 @@
 #include <regex>
 #endif
 
+#if HTTP_API_CORE
+#include <libhttpapicore/HttpApiServer.h>
+#include <regex>
+#endif
+
 #if defined(__linux__) || defined(__APPLE__)
 #include <execinfo.h>
 #elif defined(_WIN32)
@@ -174,7 +179,7 @@ public:
         }
     }
 
-#if API_CORE
+#if API_CORE || HTTP_API_CORE
 
     static void ParseBind(
         const std::string& inaddr, std::string& outaddr, int& outport, bool advertise_negative_port)
@@ -238,6 +243,9 @@ public:
 #if API_CORE
                     "api",
 #endif
+#if HTTP_API_CORE
+                    "httpapi",
+#endif
                     "misc", "env"
             },
             "", true);
@@ -281,7 +289,7 @@ public:
 
         app.add_flag("--stdout", g_logStdout, "");
 
-#if API_CORE
+#if API_CORE || HTTP_API_CORE
 
         app.add_option("--api-bind", m_api_bind, "", true)
             ->check([this](const string& bind_arg) -> string {
@@ -789,6 +797,9 @@ public:
 #if API_CORE
              << "api,"
 #endif
+#if HTTP_API_CORE
+             << "httpapi,"
+#endif
              << "'misc','env'}" << endl
              << "                        Display help text about one of these contexts:" << endl
              << "                        'con'  Connections and their definitions" << endl
@@ -804,6 +815,9 @@ public:
 #endif
 #if API_CORE
              << "                        'api'  API and Http monitoring interface" << endl
+#endif
+#if HTTP_API_CORE
+             << "                        'httpapi'  Http API" << endl
 #endif
              << "                        'misc' Other miscellaneous options" << endl
              << "                        'env'  Using environment variables" << endl
@@ -1208,6 +1222,14 @@ private:
 
 #endif
 
+#if HTTP_API_CORE
+
+        HttpApiServer httpapi(m_api_address, m_api_port, m_api_password);
+        if (m_api_port)
+            httpapi.start();
+
+#endif
+
         // Start PoolManager
         PoolManager::p().start();
 
@@ -1226,6 +1248,13 @@ private:
         // Stop Api server
         if (api.isRunning())
             api.stop();
+
+#endif
+#if HTTP_API_CORE
+
+        // Stop Api server
+        if (httpapi.isRunning())
+            httpapi.stop();
 
 #endif
         if (PoolManager::p().isRunning())
@@ -1266,7 +1295,7 @@ private:
     // -- CLI Flow control
     mutex m_climtx;
 
-#if API_CORE
+#if API_CORE || HTTP_API_CORE
     // -- API and Http interfaces related params
     string m_api_bind;                  // API interface binding address in form <address>:<port>
     string m_api_address = "0.0.0.0";   // API interface binding address (Default any)
