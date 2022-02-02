@@ -170,8 +170,17 @@ std::string HttpApiConnection::buildHttpResponse(
     std::string s;
     ss << http_ver << " " << http_code
        << "Server: " << kawpowminer_get_buildinfo()->project_name_with_version << "\r\n"
-       << "Content-Type: " << content_type << "\r\n"
-       << "Content-Length: " << body.size() << "\r\n\r\n"
+       << "Connection: close" << "\r\n";
+
+    if (body.size() > 0)
+    {
+        ss << "Content-Type: " << content_type << "\r\n"
+           << "Content-Length: " << body.size() << "\r\n";
+    }
+
+    ss << "Access-Control-Allow-Headers: Authorization, Content-Type" << "\r\n"
+       << "Access-Control-Allow-Methods: GET, PUT, POST, DELETE" << "\r\n"
+       << "Access-Control-Allow-Origin: *" << "\r\n\r\n"
        << body << "\r\n";
     s = ss.str();
     ss.clear();
@@ -211,9 +220,9 @@ void HttpApiConnection::onRecvSocketDataCompleted(
     2nd group : the path
     3rd group : HTTP version
     */
-    static std::regex http_pattern("^([A-Z]{1,6}) (\\/[\\S]*) (HTTP\\/1\\.[0-9]{1})");
+    static std::regex http_pattern("^([A-Z]{1,9}) (\\/[\\S]*) (HTTP\\/1\\.[0-9]{1})");
     static std::regex http_post_body_pattern("^(?:\\n|\\r\\n)(?:.|\\r|\\n)+");
-    static std::regex http_auth_pattern("^Authorization: Bearer (.+)");
+    static std::regex http_auth_pattern("Authorization: Bearer (.+)");
 
     std::smatch http_matches;
 
@@ -246,10 +255,20 @@ void HttpApiConnection::onRecvSocketDataCompleted(
         bool requires_auth = !m_password.empty();
 
         // Do we support method ?
-        if (http_method != "GET" && http_method != "POST")
+        if (http_method != "GET" && http_method != "POST" && http_method != "OPTIONS")
         {
             std::string what = "Method " + http_method + " not allowed";
             NotAllowed405(what);
+            m_message.clear();
+            return;
+        }
+
+        if (http_method == "OPTIONS")
+        {
+            // Convert into preflight method
+            OK200(toString(""));
+            m_message.clear();
+            return;
         }
 
         //Parse posted json body
@@ -258,8 +277,11 @@ void HttpApiConnection::onRecvSocketDataCompleted(
             std::regex_search(m_message, post_body_match, http_post_body_pattern,
                 std::regex_constants::match_default);
 
-            post_body = parseJson(post_body_match[0].str());
+            std::string bodyMatch;
+            bodyMatch.append(post_body_match[0].str());
+            post_body = parseJson(bodyMatch);
         }
+
 
         // Do we require authentication? If so, then is user authenticated?
         if (requires_auth)
@@ -267,7 +289,8 @@ void HttpApiConnection::onRecvSocketDataCompleted(
             std::smatch authTokenMatches;
             std::regex_search(m_message, authTokenMatches, http_auth_pattern,
                 std::regex_constants::match_default);
-            if (authTokenMatches[1].str() == m_password)
+
+            if (m_password.compare(authTokenMatches[1].str()) == 0)
             {
                 authenticated = true;
             }
@@ -398,7 +421,11 @@ void HttpApiConnection::onRecvSocketDataCompleted(
                 try
                 {
                     if (post_body.isMember("uri"))
-                        PoolManager::p().setActiveConnection(post_body["uri"].asString());
+                    {
+                        std::string uri;
+                        uri.append(post_body["uri"].asString());
+                    	PoolManager::p().setActiveConnection(uri);
+                    }
                     else
                         PoolManager::p().setActiveConnection(post_body["index"].asUInt());
                     OK200(jsonObjectResult("true"));                 
@@ -635,7 +662,7 @@ void HttpApiConnection::NotAllowed405(Json::Value const& obj)
 
 
 void HttpApiConnection::sendSocketData(Json::Value const& jReq, std::string const& http_code,
-    std::string const& content_type, bool _disconnect)
+    std::string const& content_type)
 {
     if (!m_socket.is_open())
         return;

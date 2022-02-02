@@ -44,7 +44,7 @@ private:
     void onRecvSocketDataCompleted(
         const boost::system::error_code& ec, std::size_t bytes_transferred);
     void sendSocketData(Json::Value const& jReq, std::string const& http_code,
-        std::string const& content_type, bool _disconnect = false);
+        std::string const& content_type);
     void sendSocketData(std::string const& _s, std::string const& http_code,
         std::string const& content_type, bool _disconnect = true);
     void onSendSocketDataCompleted(const boost::system::error_code& ec, bool _disconnect = true);
