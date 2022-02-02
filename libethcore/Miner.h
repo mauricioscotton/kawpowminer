@@ -146,6 +146,9 @@ struct HwSensorsType
     int tempC = 0;
     int fanP = 0;
     double powerW = 0.0;
+    int clock = 0;
+    int clockMem = 0;
+    int powerLimit = 0;
     string str()
     {
         string _ret = to_string(tempC) + "C " + to_string(fanP) + "%";
@@ -195,6 +198,11 @@ struct DeviceDescriptor
     unsigned int clNvComputeMajor;
     unsigned int clNvComputeMinor;
 
+    //TODO: Implement these for ATI
+    unsigned int clClockRate;
+    unsigned int clMemoryClockRate;
+    unsigned int clComputeMode;
+
     bool cuDetected;  // For CUDA detected devices
     string cuName;
     unsigned int cuDeviceOrdinal;
@@ -202,6 +210,9 @@ struct DeviceDescriptor
     string cuCompute;
     unsigned int cuComputeMajor;
     unsigned int cuComputeMinor;
+    unsigned int cuClockRate;
+    unsigned int cuMemoryClockRate;
+    unsigned int cuComputeMode;
 
     int cpCpuNumer;   // For CPU
 };

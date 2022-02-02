@@ -67,6 +67,8 @@ typedef struct
     wrap_nvmlReturn_t (*nvmlDeviceGetTemperature)(wrap_nvmlDevice_t, int, unsigned int*);
     wrap_nvmlReturn_t (*nvmlDeviceGetFanSpeed)(wrap_nvmlDevice_t, unsigned int*);
     wrap_nvmlReturn_t (*nvmlDeviceGetPowerUsage)(wrap_nvmlDevice_t, unsigned int*);
+    wrap_nvmlReturn_t (*nvmlDeviceGetClockInfo)(wrap_nvmlDevice_t, int, unsigned int*);
+    wrap_nvmlReturn_t (*nvmlDeviceGetEnforcedPowerLimit)(wrap_nvmlDevice_t, unsigned int*);
     wrap_nvmlReturn_t (*nvmlShutdown)(void);
 } wrap_nvml_handle;
 
@@ -104,6 +106,14 @@ int wrap_nvml_get_fanpcnt(wrap_nvml_handle* nvmlh, int gpuindex, unsigned int* f
  */
 int wrap_nvml_get_power_usage(wrap_nvml_handle* nvmlh, int gpuindex, unsigned int* milliwatts);
 
+
+
+
+
+int wrap_nvml_get_device_clock_info(
+    wrap_nvml_handle* nvmlh, int gpuindex, int clockType, unsigned int* clockMhz);
+
+int wrap_nvml_get_enforced_power_limit(wrap_nvml_handle* nvmlh, int gpuindex, unsigned int* power);
 
 #if defined(__cplusplus)
 }

@@ -338,6 +338,9 @@ void CUDAMiner::enumDevices(std::map<string, DeviceDescriptor>& _DevicesCollecti
                 (to_string(props.major) + "." + to_string(props.minor));
             deviceDescriptor.cuComputeMajor = props.major;
             deviceDescriptor.cuComputeMinor = props.minor;
+            deviceDescriptor.cuClockRate = props.clockRate;
+            deviceDescriptor.cuMemoryClockRate = props.memoryClockRate;
+            deviceDescriptor.cuComputeMode = props.computeMode;
             CUDA_SAFE_CALL(cudaMemGetInfo(&deviceDescriptor.freeMemory, &deviceDescriptor.totalMemory));
             _DevicesCollection[uniqueId] = deviceDescriptor;
         }

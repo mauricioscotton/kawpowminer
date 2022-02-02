@@ -533,7 +533,8 @@ void Farm::collectData(const boost::system::error_code& ec)
         {
             HwMonitorInfo hwInfo = miner->hwmonInfo();
 
-            unsigned int tempC = 0, fanpcnt = 0, powerW = 0;
+            unsigned int tempC = 0, fanpcnt = 0, powerW = 0, clock = 0, clockMem = 0,
+                         powerLimit = 0;
 
             if (hwInfo.deviceType == HwMonitorInfoType::NVIDIA && nvmlh)
             {
@@ -556,6 +557,13 @@ void Farm::collectData(const boost::system::error_code& ec)
                 {
                     wrap_nvml_get_tempC(nvmlh, devIdx, &tempC);
                     wrap_nvml_get_fanpcnt(nvmlh, devIdx, &fanpcnt);
+
+                     wrap_nvml_get_device_clock_info(
+                        nvmlh, devIdx, 0 /* NVML_CLOCK_GRAPHICS */, &clock);
+                     wrap_nvml_get_device_clock_info(
+                        nvmlh, devIdx, 2 /* NVML_CLOCK_MEM */, &clockMem);
+
+                    wrap_nvml_get_enforced_power_limit(nvmlh, devIdx, &powerLimit);
 
                     if (m_Settings.hwMon == 2)
                         wrap_nvml_get_power_usage(nvmlh, devIdx, &powerW);
@@ -636,6 +644,9 @@ void Farm::collectData(const boost::system::error_code& ec)
             m_telemetry.miners.at(minerIdx).sensors.tempC = tempC;
             m_telemetry.miners.at(minerIdx).sensors.fanP = fanpcnt;
             m_telemetry.miners.at(minerIdx).sensors.powerW = powerW / ((double)1000.0);
+            m_telemetry.miners.at(minerIdx).sensors.clock = clock;
+            m_telemetry.miners.at(minerIdx).sensors.clockMem = clockMem;
+            m_telemetry.miners.at(minerIdx).sensors.powerLimit = powerLimit;
         }
         m_telemetry.farm.hashrate = farm_hr;
         miner->TriggerHashRateUpdate();

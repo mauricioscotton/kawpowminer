@@ -729,19 +729,43 @@ Json::Value HttpApiConnection::getMinerStatDetailPerMiner(
         (minerDescriptor.type == DeviceTypeEnum::Gpu ?
                 "GPU" :
                 (minerDescriptor.type == DeviceTypeEnum::Accelerator ? "ACCELERATOR" : "CPU"));
-    ostringstream ss;
-    ss << (minerDescriptor.clDetected ? minerDescriptor.clName : minerDescriptor.cuName) << " "
-       << dev::getFormattedMemory((double)minerDescriptor.totalMemory);
-    hwinfo["name"] = ss.str();
+
+    hwinfo["name"] = minerDescriptor.clDetected ? minerDescriptor.clName : minerDescriptor.cuName;
+    hwinfo["global_memory"] = (double)minerDescriptor.totalMemory;
+    hwinfo["clock"] =
+        minerDescriptor.clDetected ? minerDescriptor.clClockRate : minerDescriptor.cuClockRate;
+    hwinfo["clock_memory"] = minerDescriptor.clDetected ? minerDescriptor.clMemoryClockRate :
+                                                          minerDescriptor.cuMemoryClockRate;
+    hwinfo["compute_mode"] =
+        minerDescriptor.clDetected ? minerDescriptor.clComputeMode : minerDescriptor.cuComputeMode;
+
+    if (minerDescriptor.clDetected)
+    {
+        hwinfo["compute"] = toString(minerDescriptor.clNvComputeMajor) + "." + 
+                            toString(minerDescriptor.clNvComputeMinor);
+    }
+    else
+    {
+        hwinfo["compute"] = toString(minerDescriptor.cuComputeMajor) + "." +
+                            toString(minerDescriptor.cuComputeMinor);    
+    }
 
     /* Hardware Sensors*/
     Json::Value sensors = Json::Value();
-
     sensors["temp"] = _t.miners.at(_index).sensors.tempC;
     sensors["fan"] = _t.miners.at(_index).sensors.fanP;
     sensors["power"] = _t.miners.at(_index).sensors.powerW;
 
     hwinfo["sensors"] = sensors;
+
+
+    Json::Value health = Json::Value();
+    health["clock"] = _t.miners.at(_index).sensors.clock;
+    health["clock_memory"] = _t.miners.at(_index).sensors.clockMem;
+    health["power_limit"] = _t.miners.at(_index).sensors.powerLimit;
+    health["free_memory"] = (double)minerDescriptor.freeMemory;
+
+    hwinfo["health"] = health;
 
     /* Mining Info */
     Json::Value mininginfo;

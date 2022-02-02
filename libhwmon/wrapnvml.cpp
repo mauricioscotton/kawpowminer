@@ -90,10 +90,18 @@ wrap_nvml_handle* wrap_nvml_create()
         wrap_nvmlDevice_t, unsigned int*))wrap_dlsym(nvmlh->nvml_dll, "nvmlDeviceGetPowerUsage");
     nvmlh->nvmlShutdown = (wrap_nvmlReturn_t(*)())wrap_dlsym(nvmlh->nvml_dll, "nvmlShutdown");
 
+    nvmlh->nvmlDeviceGetClockInfo = (wrap_nvmlReturn_t(*)(wrap_nvmlDevice_t, int,
+        unsigned int*))wrap_dlsym(nvmlh->nvml_dll, "nvmlDeviceGetClockInfo");
+
+    nvmlh->nvmlDeviceGetEnforcedPowerLimit = (wrap_nvmlReturn_t(*)(wrap_nvmlDevice_t,
+        unsigned int*))wrap_dlsym(nvmlh->nvml_dll, "nvmlDeviceGetEnforcedPowerLimit");
+
     if (nvmlh->nvmlInit == nullptr || nvmlh->nvmlShutdown == nullptr ||
         nvmlh->nvmlDeviceGetCount == nullptr || nvmlh->nvmlDeviceGetHandleByIndex == nullptr ||
         nvmlh->nvmlDeviceGetPciInfo == nullptr || nvmlh->nvmlDeviceGetName == nullptr ||
         nvmlh->nvmlDeviceGetTemperature == nullptr || nvmlh->nvmlDeviceGetFanSpeed == nullptr ||
+        nvmlh->nvmlDeviceGetEnforcedPowerLimit == nullptr ||
+        nvmlh->nvmlDeviceGetClockInfo == nullptr ||
         nvmlh->nvmlDeviceGetPowerUsage == nullptr)
     {
         cwarn << "Failed to obtain all required NVML function pointers";
@@ -188,6 +196,35 @@ int wrap_nvml_get_power_usage(wrap_nvml_handle* nvmlh, int gpuindex, unsigned in
         return -1;
 
     if (nvmlh->nvmlDeviceGetPowerUsage(nvmlh->devs[gpuindex], milliwatts) != WRAPNVML_SUCCESS)
+        return -1;
+
+    return 0;
+}
+
+
+
+
+
+int wrap_nvml_get_device_clock_info(
+    wrap_nvml_handle* nvmlh, int gpuindex, int clockType, unsigned int* clockMhz)
+{
+    if (gpuindex < 0 || gpuindex >= nvmlh->nvml_gpucount)
+        return -1;
+
+    if (nvmlh->nvmlDeviceGetClockInfo(nvmlh->devs[gpuindex], clockType, clockMhz) !=
+        WRAPNVML_SUCCESS)
+        return -1;
+
+    return 0;
+}
+
+int wrap_nvml_get_enforced_power_limit(wrap_nvml_handle* nvmlh, int gpuindex, unsigned int* power)
+{
+    if (gpuindex < 0 || gpuindex >= nvmlh->nvml_gpucount)
+        return -1;
+
+    if (nvmlh->nvmlDeviceGetEnforcedPowerLimit(nvmlh->devs[gpuindex], power) !=
+        WRAPNVML_SUCCESS)
         return -1;
 
     return 0;
